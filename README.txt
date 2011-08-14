@@ -1,4 +1,6 @@
-TinyWebServer, release 20101208
+Arduino TinyWebServer, release 20101208
+
+A small web server for Arduino.
 
 Please read up on the latest changes here:
 
