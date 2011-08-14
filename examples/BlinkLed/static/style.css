@@ -1,0 +1,14 @@
+/*
+  Copyright 2010 Ovidiu Predescu <ovidiu@gmail.com>
+  Date: December 2010
+  */
+
+div.light a {
+    margin-left: auto;
+    margin-right: auto;
+    background-image:url('lights.png');
+    display: block;
+}
+
+a.off { background-position: 0 0; width: 258px; height: 299px; }
+a.on { background-position: -308px 0; width: 258px; height: 299px; }

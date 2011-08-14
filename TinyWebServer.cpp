@@ -1,0 +1,600 @@
+// -*- c++ -*-
+//
+// Copyright 2010 Ovidiu Predescu <ovidiu@gmail.com>
+// Date: May 2010
+//
+// TinyWebServer for Arduino.
+
+#include "WProgram.h"
+
+extern "C" {
+#include "wiring.h"
+#include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
+#include <errno.h>
+}
+
+#include <Ethernet.h>
+#include <Flash.h>
+#include <SdFat.h>
+
+#include "TinyWebServer.h"
+
+// Temporary buffer.
+static char buffer[160];
+
+FLASH_STRING(mime_types,
+  "HTM*text/html|"
+  "TXT*text/plain|"
+  "CSS*text/css|"
+  "XML*text/xml|"
+  "JS*text/javascript|"
+
+  "GIF*image/gif|"
+  "JPG*image/jpeg|"
+  "PNG*image/png|"
+  "ICO*image/vnd.microsoft.icon|"
+
+  "MP3*audio/mpeg|"
+);
+
+void *malloc_check(size_t size) {
+  void* r = malloc(size);
+  if (!r) {
+    Serial << F("No space for malloc: " ); Serial.println(size, DEC);
+  }
+  return r;
+}
+
+// Offset for text/html in `mime_types' above.
+static const TinyWebServer::MimeType text_html_content_type = 4;
+
+TinyWebServer::TinyWebServer(PathHandler handlers[],
+			     const char** headers)
+  : handlers_(handlers),
+    server_(Server(80)),
+    path_(NULL),
+    request_type_(UNKNOWN_REQUEST),
+    client_(Client(255)) {
+  if (headers) {
+    int size = 0;
+    for (int i = 0; headers[i]; i++) {
+      size++;
+    }
+    headers_ = (HeaderValue*)malloc_check(sizeof(HeaderValue) * (size + 1));
+    for (int i = 0; i < size; i++) {
+      headers_[i].header = headers[i];
+    }
+    headers_[size].header = NULL;
+  } else {
+    headers_ = NULL;
+  }
+}
+
+void TinyWebServer::begin() {
+  server_.begin();
+}
+
+// Process headers.
+boolean TinyWebServer::process_headers() {
+  if (headers_) {
+    // First clear the header values from the previous HTTP request
+    for (int i = 0; headers_[i].header; i++) {
+      free(headers_[i].value);
+      headers_[i].value = NULL;
+    }
+  }
+
+  enum State {
+    ERROR,
+    START_LINE,
+    HEADER_NAME,
+    HEADER_VALUE,
+    HEADER_VALUE_SKIP_INITIAL_SPACES,
+    HEADER_IGNORE_VALUE,
+    END_HEADERS,
+  };
+  State state = START_LINE;
+
+  char ch;
+  int pos;
+  const char* header;
+  while (1) {
+    if (should_stop_processing()) {
+      return false;
+    }
+    if (!read_next_char(client_, (uint8_t*)&ch)) {
+      continue;
+    }
+
+    Serial.print(ch);
+    switch (state) {
+    case START_LINE:
+      if (ch == '\r') {
+	break;
+      } else if (ch == '\n') {
+	state = END_HEADERS;
+      } else if (isalnum(ch) || ch == '-') {
+	pos = 0;
+	buffer[pos++] = ch;
+	state = HEADER_NAME;
+      } else {
+	state = ERROR;
+      }
+      break;
+
+    case HEADER_NAME:
+      if (pos + 1 >= sizeof(buffer)) {
+	state = ERROR;
+	break;
+      }
+      if (ch == ':') {
+	buffer[pos] = 0;
+	header = buffer;
+	if (is_requested_header(&header)) {
+	  state = HEADER_VALUE_SKIP_INITIAL_SPACES;
+	} else {
+	  state = HEADER_IGNORE_VALUE;
+	}
+	pos = 0;
+      } else if (isalnum(ch) || ch == '-') {
+	buffer[pos++] = ch;
+      } else {
+	state = ERROR;
+	break;
+      }
+      break;
+
+    case HEADER_VALUE_SKIP_INITIAL_SPACES:
+      if (pos + 1 >= sizeof(buffer)) {
+	state = ERROR;
+	break;
+      }
+      if (ch != ' ') {
+	buffer[pos++] = ch;
+	state = HEADER_VALUE;
+      }
+      break;
+
+    case HEADER_VALUE:
+      if (pos + 1 >= sizeof(buffer)) {
+	state = ERROR;
+	break;
+      }
+      if (ch == '\n') {
+	buffer[pos] = 0;
+	if (!assign_header_value(header, buffer)) {
+	  state = ERROR;
+	  break;
+	}
+	state = START_LINE;
+      } else {
+	if (ch != '\r') {
+	  buffer[pos++] = ch;
+	}
+      }
+      break;
+
+    case HEADER_IGNORE_VALUE:
+      if (ch == '\n') {
+	state = START_LINE;
+      }
+      break;
+
+    default:
+      break;
+    }
+
+    if (state == END_HEADERS) {
+      break;
+    }
+    if (state == ERROR) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void TinyWebServer::process() {
+  client_ = server_.available();
+  if (!client_.connected() || !client_.available()) {
+    return;
+  }
+
+  boolean is_complete = get_line(buffer, sizeof(buffer));
+  if (!buffer[0]) {
+    return;
+  }
+  Serial << F("New request: ");
+  Serial.println(buffer);
+  if (!is_complete) {
+    // The requested path is too long.
+    send_error_code(414);
+    client_.stop();
+    return;
+  }
+
+  int size = strlen(buffer);
+  char* request_type_str = get_field(buffer, size, 0);
+  request_type_ = UNKNOWN_REQUEST;
+  if (!strcmp("GET", request_type_str)) {
+    request_type_ = GET;
+  } else if (!strcmp("POST", request_type_str)) {
+    request_type_ = POST;
+  } else if (!strcmp("PUT", request_type_str)) {
+    request_type_ = PUT;
+  }
+  path_ = get_field(buffer, size, 1);
+
+  // Process the headers
+  if (!process_headers()) {
+    // Malformed header line.
+    send_error_code(417);
+    client_.stop();
+  }
+  // Header processing finished. Identify the handler to call.
+
+  boolean should_close = true;
+  boolean found = false;
+  for (int i = 0; handlers_[i].path; i++) {
+    int len = strlen(handlers_[i].path);
+    boolean exact_match = !strcmp(path_, handlers_[i].path);
+    boolean regex_match = false;
+    if (handlers_[i].path[len - 1] == '*') {
+      regex_match = !strncmp(path_, handlers_[i].path, len - 1);
+    }
+    if ((exact_match || regex_match)
+	&& (handlers_[i].type == ANY || handlers_[i].type == request_type_)) {
+      found = true;
+      should_close = (handlers_[i].handler)(*this);
+      break;
+    }
+  }
+
+  if (!found) {
+    send_error_code(404);
+    // (*this) << F("URL not found: ");
+    // client_->print(path_);
+    // client_->println();
+  }
+  if (should_close) {
+    client_.stop();
+  }
+
+  free(path_);
+  free(request_type_str);
+}
+
+boolean TinyWebServer::is_requested_header(const char** header) {
+  if (!headers_) {
+    return false;
+  }
+  for (int i = 0; headers_[i].header; i++) {
+    if (!strcmp(*header, headers_[i].header)) {
+      *header = headers_[i].header;
+      return true;
+    }
+  }
+  return false;
+}
+
+boolean TinyWebServer::assign_header_value(const char* header, char* value) {
+  if (!headers_) {
+    return false;
+  }
+  boolean found = false;
+  for (int i = 0; headers_[i].header; i++) {
+    // Use pointer equality, since `header' must be the pointer
+    // inside headers_
+    if (header == headers_[i].header) {
+      headers_[i].value = (char*)malloc_check(strlen(value) + 1);
+      if (!headers_[i].value) {
+	return false;
+      }
+      strcpy(headers_[i].value, value);
+      found = true;
+      break;
+    }
+  }
+  return found;
+}
+
+FLASH_STRING(content_type_msg, "Content-Type: ");
+
+void TinyWebServer::send_error_code(Client& client, int code) {
+  Serial << F("Returning ");
+  Serial.println(code, DEC);
+
+  client << F("HTTP/1.1 ");
+  client.print(code, DEC);
+  client << F(" OK\r\n");
+  if (code != 200) {
+    end_headers(client);
+  }
+}
+
+void TinyWebServer::send_content_type(MimeType mime_type) {
+  client_ << content_type_msg;
+
+  char ch;
+  int i = mime_type;
+  while ((ch = mime_types[i++]) != '|') {
+    client_.print(ch);
+  }
+
+  client_.println();
+}
+
+void TinyWebServer::send_content_type(const char* content_type) {
+  client_ << content_type_msg;
+  client_.println(content_type);
+}
+
+const char* TinyWebServer::get_path() { return path_; }
+
+const TinyWebServer::HttpRequestType TinyWebServer::get_type() {
+  return request_type_;
+}
+
+const char* TinyWebServer::get_header_value(const char* name) {
+  if (!headers_) {
+    return NULL;
+  }
+  for (int i = 0; headers_[i].header; i++) {
+    if (!strcmp(headers_[i].header, name)) {
+      return headers_[i].value;
+    }
+  }
+  return NULL;
+}
+
+char* TinyWebServer::decode_url_encoded(const char* s) {
+  if (!s) {
+    return NULL;
+  }
+  char* r = (char*)malloc_check(strlen(s) + 1);
+  char* r2 = r;
+  const char* p = s;
+  while (*s && (p = strchr(s, '%'))) {
+    if (p - s) {
+      memcpy(r2, s, p - s);
+      r2 += (p - s);
+    }
+    // If the remaining number of characters is less than 3, we cannot
+    // have a complete escape sequence. Break early.
+    if (strlen(p) < 3) {
+      // Move the new beginning to the value of p.
+      s = p;
+      break;
+    }
+    char hex[3];
+    hex[0] = *(p + 1);
+    hex[1] = *(p + 2);
+    hex[2] = 0;
+    uint32_t r = strtoul(hex, NULL, 16);
+    if (r == 0 || errno) {
+      // No conversion could be performed, couldn't find an escape
+      // sequence. Copy it as it is in the result
+      memcpy(r2, p, 3);
+      r2 += 3;
+    }
+    else {
+      *r2++ = r;
+    }
+    p += 3;
+
+    // Move the new beginning to the value of p.
+    s = p;
+  }
+  // Copy whatever is left of the string in the result.
+  int len = strlen(s);
+  if (len > 0) {
+    strncpy(r2, s, len);
+  }
+  // Append the 0 terminator
+  *(r2 + len) = 0;
+
+  return r;
+}
+
+char* TinyWebServer::get_file_from_path(const char* path) {
+  // Obtain the last path component
+  const char* encoded_fname = strrchr(path, '/');
+  if (!encoded_fname) {
+    return NULL;
+  } else {
+    // Skip past the '/'
+    encoded_fname++;
+  }
+  char* decoded = decode_url_encoded(encoded_fname);
+  for (char* p = decoded; *p; p++) {
+    *p = toupper(*p);
+  }
+  return decoded;
+}
+
+TinyWebServer::MimeType TinyWebServer::get_mime_type_from_filename(
+    const char* filename) {
+  MimeType r = text_html_content_type;
+  if (!filename) {
+    return r;
+  }
+
+  char* ext = strrchr(filename, '.');
+  if (ext) {
+    // We found an extension. Skip past the '.'
+    ext++;
+
+    char ch;
+    int i = 0;
+    while (i < mime_types.length()) {
+      // Compare the extension
+      char* p = ext;
+      ch = mime_types[i];
+      while (*p && ch != '*' && toupper(*p) == ch) {
+	p++; i++;
+	ch = mime_types[i];
+      }
+      if (!*p && ch == '*') {
+	// We reached the end of the extension while checking
+	// equality with a MIME type: we have a match. Increment i
+	// to reach past the '*' char, and assign it to `mime_type'.
+	r = ++i;
+	break;
+      } else {
+	// Skip past the the '|' character indicating the end of a
+	// MIME type.
+	while (mime_types[i++] != '|')
+	  ;
+      }
+    }
+  }
+  return r;
+}
+
+void TinyWebServer::send_file(SdFile& file) {
+  size_t size;
+  while ((size = file.read(buffer, sizeof(buffer))) > 0) {
+    if (!client_.connected()) {
+      break;
+    }
+    write((uint8_t*)buffer, size);
+  }
+}
+
+void TinyWebServer::write(uint8_t c) {
+  client_.write(c);
+}
+
+void TinyWebServer::write(const char *str) {
+  client_.write(str);
+}
+
+void TinyWebServer::write(const uint8_t *buffer, size_t size) {
+  client_.write(buffer, size);
+}
+
+boolean TinyWebServer::read_next_char(Client& client, uint8_t* ch) {
+  if (!client.available()) {
+    return false;
+  } else {
+    *ch = client.read();
+    return true;
+  }
+}
+
+boolean TinyWebServer::get_line(char* buffer, int size) {
+  int i = 0;
+  char ch;
+
+  buffer[0] = 0;
+  for (; i < size - 1; i++) {
+    if (!read_next_char(client_, (uint8_t*)&ch)) {
+      continue;
+    }
+    if (ch == '\n') {
+      break;
+    }
+    buffer[i] = ch;
+  }
+  buffer[i] = 0;
+  return i < size - 1;
+}
+
+// Returns a newly allocated string containing the field number `which`.
+// The first field's index is 0.
+// The caller is responsible for freeing the returned value.
+char* TinyWebServer::get_field(const char* buffer, int size, int which) {
+  char* field = NULL;
+  boolean prev_is_space = false;
+  int i = 0;
+  int field_no = 0;
+
+  for (; field_no < which; field_no++) {
+    // Skip over space characters
+    while (i < size && isspace(buffer[i])) {
+      i++;
+    }
+    // Skip over non-space characters
+    while (i < size && !isspace(buffer[i])) {
+      i++;
+    }
+  }
+
+  // Skip over space characters
+  while (i < size && isspace(buffer[i])) {
+    i++;
+  }
+
+  if (field_no == which && i < size) {
+    // Now identify where the field ends
+    int j = i;
+    while (j < size && !isspace(buffer[j])) {
+      j++;
+    }
+
+    field = (char*) malloc_check(j - i + 1);
+    int p = 0;
+    memcpy(field, buffer + i, j - i);
+    field[j - i] = 0;
+  }
+  return field;
+}
+
+// The PUT handler
+
+namespace TinyWebPutHandler {
+
+HandlerFn put_handler_fn = NULL;
+
+// Fills in `buffer' by reading up to `num_bytes'. Returns the
+// number of characters read.
+int read_chars(TinyWebServer& web_server, Client& client,
+               uint8_t* buffer, int size) {
+  uint8_t ch;
+  int pos;
+  for (pos = 0; pos < size && web_server.read_next_char(client, &ch); pos++) {
+    buffer[pos] = ch;
+  }
+  return pos;
+}
+
+boolean put_handler(TinyWebServer& web_server) {
+  web_server.send_error_code(200);
+  web_server.end_headers();
+
+  const char* length_str = web_server.get_header_value("Content-Length");
+  long length = atol(length_str);
+  uint32_t start_time = millis();
+
+  Client client = web_server.get_client();
+
+  if (put_handler_fn) {
+    (*put_handler_fn)(web_server, START, NULL, length);
+  }
+
+  uint32_t i;
+  for (i = 0; i < length && client.connected();) {
+    int16_t size = read_chars(web_server, client, (uint8_t*)buffer, 64);
+    if (!size) {
+      // Exit if the upload takes more than 30 seconds
+      if (millis() - start_time > 30000) {
+	break;
+      }
+      continue;
+    }
+    i += size;
+
+    if (put_handler_fn) {
+      (*put_handler_fn)(web_server, WRITE, buffer, size);
+    }
+  }
+  if (put_handler_fn) {
+    (*put_handler_fn)(web_server, END, NULL, 0);
+  }
+
+  return true;
+}
+
+};
