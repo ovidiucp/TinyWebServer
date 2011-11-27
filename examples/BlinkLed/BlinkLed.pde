@@ -110,6 +110,7 @@ boolean led_status_handler(TinyWebServer& web_server) {
   web_server.end_headers();
   Client& client = web_server.get_client();
   client.println(getLedState(), DEC);
+  return true;
 }
 
 boolean index_handler(TinyWebServer& web_server) {
