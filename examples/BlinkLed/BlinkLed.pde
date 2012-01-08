@@ -2,13 +2,13 @@
 //
 // Copyright 2010 Ovidiu Predescu <ovidiu@gmail.com>
 // Date: December 2010
+// Updated: 08-JAN-2012 for Arduno IDE 1.0 by <Hardcore@hardcoreforensics.com>
 //
 
 #include <SPI.h>
 #include <Ethernet.h>
 #include <Flash.h>
-#include <SdFat.h>
-#include <SdFatUtil.h>
+#include <SD.h>
 #include <TinyWebServer.h>
 
 // The LED attached in PIN 13 on an Arduino board.
