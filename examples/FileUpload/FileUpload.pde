@@ -41,7 +41,7 @@ SdFile file;
 static uint8_t mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 
 // Don't forget to modify the IP to an available one on your home network
-byte ip[] = { 192, 168, 5, 237 };
+byte ip[] = { 192, 168, 5, 177 };
 
 void send_file_name(TinyWebServer& web_server, const char* filename) {
   if (!filename) {
