@@ -1,8 +1,8 @@
-Arduino TinyWebServer, release 20120106
+Arduino TinyWebServer
 
 A small web server for Arduino.
 
-Please read up on the TWS Pre Arduino IDE 1.0 history here:
+Please read up on the TinyWebServer history here:
 
 http://www.webweavertech.com/ovidiu/weblog/archives/000484.html
 
@@ -12,27 +12,39 @@ The library is licensed under the terms of LGPL 2.1. Which means
 you're free to use it in your projects (including commercial ones) as
 long as you're sending back the changes you make to the library.
 
+External dependencies
+====================
+
+TinyWebServer depends on the external library Flash version 3.0, which
+is found here:
+
+http://arduiniana.org/libraries/flash/
+
+At the time of this writing (January 10, 2012), Flash 3.0 needs a
+small change to make it compatible with Arduino 1.0. In Flash/Flash.h
+replace the line
+
+#include <WProgram.h>
+
+with:
+
+#if ARDUINO < 100
+#include <WProgram.h>
+#else
+#include <Arduino.h>
+#endif
+
 Basic web server
 ================
 
-To make use of the TWS library, you need to include the following your
-sketch:
+To make use of the TinyWebServer library, you need to include the
+following your sketch:
 
     #include <Ethernet.h>
-    #include <EthernetDHCP.h>
-    #include <Flash.h> *
-    #include <FD.h>
+    #include <Flash.h>
+    #include <SD.h>
     #include <TinyWebServer.h>
 
-EthernetDHCP is optional, but it makes acquiring an IP address a lot
-easier if you have a DHCP server in your network.
-
-*(06/Jan/2012) Note that the external library 'Flash' 3.0 found here:
-http://arduiniana.org/libraries/flash/
-
-Needs to have one (#include <WProgram.h>)line removed, if it is to work with the Arduino IDE >1.0. 
-
-TinyWebServer
 TWS is implemented by the TinyWebServer class. The constructor method
 takes two arguments. The first one is a list of handlers, functions to
 be invoked when a particular URL is requested by an HTTP client. The
