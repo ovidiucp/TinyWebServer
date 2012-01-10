@@ -3,12 +3,15 @@
 // Copyright 2010 Ovidiu Predescu <ovidiu@gmail.com>
 // Date: May 2010
 //
+// Updated: 08-JAN-2012 for Arduno IDE 1.0 by <Hardcore@hardcoreforensics.com> 
+//
 // TinyWebServer for Arduino.
 
-#include "WProgram.h"
+
+#include "Arduino.h"
 
 extern "C" {
-#include "wiring.h"
+
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
@@ -17,7 +20,7 @@ extern "C" {
 
 #include <Ethernet.h>
 #include <Flash.h>
-#include <SdFat.h>
+#include <SD.h>
 
 #include "TinyWebServer.h"
 
@@ -463,15 +466,15 @@ void TinyWebServer::send_file(SdFile& file) {
   }
 }
 
-void TinyWebServer::write(uint8_t c) {
+size_t TinyWebServer::write(uint8_t c) {
   client_.write(c);
 }
 
-void TinyWebServer::write(const char *str) {
+size_t TinyWebServer::write(const char *str) {
   client_.write(str);
 }
 
-void TinyWebServer::write(const uint8_t *buffer, size_t size) {
+size_t TinyWebServer::write(const uint8_t *buffer, size_t size) {
   client_.write(buffer, size);
 }
 
@@ -568,7 +571,7 @@ boolean put_handler(TinyWebServer& web_server) {
   long length = atol(length_str);
   uint32_t start_time = millis();
 
-  Client client = web_server.get_client();
+  EthernetClient client = web_server.get_client();
 
   if (put_handler_fn) {
     (*put_handler_fn)(web_server, START, NULL, length);

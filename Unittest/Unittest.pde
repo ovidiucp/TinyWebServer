@@ -2,18 +2,18 @@
 //
 // Copyright 2010 Ovidiu Predescu <ovidiu@gmail.com>
 // Date: June 2010
+// Updated: 08-JAN-2012 for Arduno IDE 1.0 by <Hardcore@hardcoreforensics.com>
 //
 
 extern "C" {
 #include <ctype.h>
-#include "wiring.h"
 }
 
 #include <Ethernet.h>
 #include <SPI.h>
 #include <Flash.h>
-#include <SdFat.h>
-#include <SdFatUtil.h>
+#include <SD.h>
+
 #include <TinyWebServer.h>
 
 class TinyWebServerTest : public TinyWebServer {
