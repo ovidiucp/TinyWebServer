@@ -2,12 +2,13 @@
 //
 // Copyright 2010 Ovidiu Predescu <ovidiu@gmail.com>
 // Date: June 2010
+// Updated: 08-JAN-2012 for Arduno IDE 1.0 by <Hardcore@hardcoreforensics.com>
 //
 
 #include <SPI.h>
 #include <Ethernet.h>
 #include <Flash.h>
-#include <SdFatUtil.h>
+#include <SD.h>
 #include <TinyWebServer.h>
 
 boolean index_handler(TinyWebServer& web_server);
@@ -15,7 +16,7 @@ boolean index_handler(TinyWebServer& web_server);
 static uint8_t mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 
 // Don't forget to modify the IP to an available one on your home network
-byte ip[] = { 192, 42, 172, 237 };
+byte ip[] = { 192, 168, 5, 177 };
 
 TinyWebServer::PathHandler handlers[] = {
   {"/", TinyWebServer::GET, &index_handler },

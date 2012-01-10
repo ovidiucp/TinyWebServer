@@ -3,14 +3,17 @@
 // Copyright 2010 Ovidiu Predescu <ovidiu@gmail.com>
 // Date: May, June 2010
 //
+// Updated: 08-JAN-2012 for Arduno IDE 1.0 by <Hardcore@hardcoreforensics.com>
+//
 // TinyWebServer for Arduino.
 
 #ifndef __WEB_SERVER_H__
 #define __WEB_SERVER_H__
 
 #include <Print.h>
-#include <Server.h>
-#include <Client.h>
+//#include <Server.h>
+//#include <Client.h>
+
 
 class SdFile;
 class TinyWebServer;
@@ -100,7 +103,7 @@ public:
   const char* get_path();
   const HttpRequestType get_type();
   const char* get_header_value(const char* header);
-  Client& get_client() { return client_; }
+  EthernetClient& get_client() { return client_; }
 
   // Processes the HTTP headers and assigns values to the requested
   // ones in headers_. Returns true when successful, false in case of
@@ -138,9 +141,9 @@ public:
 
   // These methods write directly in the response stream of the
   // connected client
-  virtual void write(uint8_t c);
-  virtual void write(const char *str);
-  virtual void write(const uint8_t *buffer, size_t size);
+  virtual size_t write(uint8_t c);
+  virtual size_t write(const char *str);
+  virtual size_t write(const uint8_t *buffer, size_t size);
 
   // Some methods used for testing purposes
 
@@ -170,11 +173,11 @@ private:
   HeaderValue* headers_;
 
   // The TCP/IP server we use.
-  Server server_;
+  EthernetServer server_;
 
   char* path_;
   HttpRequestType request_type_;
-  Client client_;
+  EthernetClient client_;
 
   // Reads a line from the HTTP request sent by an HTTP client. The
   // line is put in `buffer' and up to `size' characters are written

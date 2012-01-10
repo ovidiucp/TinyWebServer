@@ -2,13 +2,13 @@
 //
 // Copyright 2010 Ovidiu Predescu <ovidiu@gmail.com>
 // Date: December 2010
+// Updated: 08-JAN-2012 for Arduno IDE 1.0 by <Hardcore@hardcoreforensics.com>
 //
 
 #include <SPI.h>
 #include <Ethernet.h>
 #include <Flash.h>
-#include <SdFat.h>
-#include <SdFatUtil.h>
+#include <SD.h>
 #include <TinyWebServer.h>
 
 // The LED attached in PIN 13 on an Arduino board.
@@ -58,7 +58,7 @@ SdFile file;
 static uint8_t mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 
 // Don't forget to modify the IP to an available one on your home network
-byte ip[] = { 192, 42, 172, 237 };
+byte ip[] = { 192, 168, 5, 177 };
 
 void send_file_name(TinyWebServer& web_server, const char* filename) {
   if (!filename) {
