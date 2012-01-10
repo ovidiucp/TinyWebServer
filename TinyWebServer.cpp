@@ -56,10 +56,10 @@ static const TinyWebServer::MimeType text_html_content_type = 4;
 TinyWebServer::TinyWebServer(PathHandler handlers[],
 			     const char** headers)
   : handlers_(handlers),
-    server_(Server(80)),
+    server_(EthernetServer(80)),
     path_(NULL),
     request_type_(UNKNOWN_REQUEST),
-    client_(Client(255)) {
+    client_(EthernetClient(255)) {
   if (headers) {
     int size = 0;
     for (int i = 0; headers[i]; i++) {
