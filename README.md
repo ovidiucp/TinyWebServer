@@ -24,15 +24,15 @@ At the time of this writing (January 10, 2012), Flash 3.0 needs a
 small change to make it compatible with Arduino 1.0. In Flash/Flash.h
 replace the line
 
-#include <WProgram.h>
+    #include <WProgram.h>
 
 with:
 
-#if ARDUINO < 100
-#include <WProgram.h>
-#else
-#include <Arduino.h>
-#endif
+    #if ARDUINO < 100
+    # include <WProgram.h>
+    #else
+    # include <Arduino.h>
+    #endif
 
 Basic web server
 ================
