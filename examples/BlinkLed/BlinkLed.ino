@@ -102,6 +102,7 @@ boolean blink_led_handler(TinyWebServer& web_server) {
       setLedEnabled(true);
     }
   }
+  return true;
 }
 
 boolean led_status_handler(TinyWebServer& web_server) {
