@@ -11,8 +11,6 @@
 #define __WEB_SERVER_H__
 
 #include <Print.h>
-//#include <Server.h>
-//#include <Client.h>
 
 
 class SdFile;
