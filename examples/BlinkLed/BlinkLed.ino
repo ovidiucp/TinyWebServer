@@ -168,7 +168,7 @@ void setup() {
   Serial << F("Setting up SD card...\n");
   pinMode(10, OUTPUT); // set the SS pin as an output (necessary!)
   digitalWrite(10, HIGH); // but turn off the W5100 chip!
-  if (!card.init(SPI_FULL_SPEED, 4)) {
+  if (!card.init(SPI_HALF_SPEED, 4)) {
     Serial << F("card failed\n");
     has_filesystem = false;
   }
