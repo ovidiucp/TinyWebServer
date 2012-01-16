@@ -11,6 +11,16 @@
 #include <SD.h>
 #include <TinyWebServer.h>
 
+
+//There appears to be a problem on the ATmega as regards the webserver/SDcard and this demo
+//After a 'cold' boot only the first requested file is sent , then the demo hangs as a result
+//we had have to set the SPI speed to half.
+#if defined(_MEGA_BOARD_) || defined(_BOARD_AMBER128_) || defined(__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) || defined(__AVR_ATmega2561__)
+const int SET_SPI_SPEED = SPI_HALF_SPEED;
+#else
+const int SET_SPI_SPEED = SPI_FULL_SPEED;
+#endif
+
 boolean file_handler(TinyWebServer& web_server);
 boolean index_handler(TinyWebServer& web_server);
 
@@ -121,7 +131,7 @@ void setup() {
   Serial << F("Setting up SD card...\n");
   pinMode(10, OUTPUT); // set the SS pin as an output (necessary!)
   digitalWrite(10, HIGH); // but turn off the W5100 chip!
-  if (!card.init(SPI_FULL_SPEED, 4)) {
+  if (!card.init(SET_SPI_SPEED, 4)) {
     Serial << F("card failed\n");
     has_filesystem = false;
   }
