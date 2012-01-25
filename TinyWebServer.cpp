@@ -68,6 +68,7 @@ TinyWebServer::TinyWebServer(PathHandler handlers[],
     headers_ = (HeaderValue*)malloc_check(sizeof(HeaderValue) * (size + 1));
     for (int i = 0; i < size; i++) {
       headers_[i].header = headers[i];
+      headers_[i].value = NULL;
     }
     headers_[size].header = NULL;
   } else {
@@ -84,7 +85,9 @@ boolean TinyWebServer::process_headers() {
   if (headers_) {
     // First clear the header values from the previous HTTP request
     for (int i = 0; headers_[i].header; i++) {
-      free(headers_[i].value);
+      if (headers_[i].value) {
+        free(headers_[i].value);
+      }
       headers_[i].value = NULL;
     }
   }
