@@ -66,11 +66,13 @@ TinyWebServer::TinyWebServer(PathHandler handlers[],
       size++;
     }
     headers_ = (HeaderValue*)malloc_check(sizeof(HeaderValue) * (size + 1));
-    for (int i = 0; i < size; i++) {
-      headers_[i].header = headers[i];
-      headers_[i].value = NULL;
+    if (headers_) { // headers_ = NULL if the malloc fails.
+      for (int i = 0; i < size; i++) {
+        headers_[i].header = headers[i];
+        headers_[i].value = NULL;
+      }
+      headers_[size].header = NULL;
     }
-    headers_[size].header = NULL;
   } else {
     headers_ = NULL;
   }
@@ -87,8 +89,9 @@ boolean TinyWebServer::process_headers() {
     for (int i = 0; headers_[i].header; i++) {
       if (headers_[i].value) {
         free(headers_[i].value);
+        //Ensure the pointer is cleared once the memory is freed.
+        headers_[i].value = NULL;
       }
-      headers_[i].value = NULL;
     }
   }
 
@@ -359,6 +362,9 @@ char* TinyWebServer::decode_url_encoded(const char* s) {
     return NULL;
   }
   char* r = (char*)malloc_check(strlen(s) + 1);
+  if (!r){
+    return NULL;
+  }
   char* r2 = r;
   const char* p = s;
   while (*s && (p = strchr(s, '%'))) {
@@ -413,6 +419,9 @@ char* TinyWebServer::get_file_from_path(const char* path) {
     encoded_fname++;
   }
   char* decoded = decode_url_encoded(encoded_fname);
+  if (!decoded) {
+    return NULL;
+  }
   for (char* p = decoded; *p; p++) {
     *p = toupper(*p);
   }
@@ -545,7 +554,9 @@ char* TinyWebServer::get_field(const char* buffer, int which) {
     }
 
     field = (char*) malloc_check(j - i + 1);
-    int p = 0;
+      if (!field) {
+        return NULL;
+      }
     memcpy(field, buffer + i, j - i);
     field[j - i] = 0;
   }
