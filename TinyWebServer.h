@@ -155,7 +155,7 @@ public:
   // Returns the field number `which' from buffer. Fields are
   // separated by spaces. Should be a private method, but made public
   // so it can be tested.
-  static char* get_field(const char* buffer, int size, int which);
+  static char* get_field(const char* buffer, int which);
 
 private:
   // The path handlers
