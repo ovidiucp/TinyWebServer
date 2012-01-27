@@ -5,11 +5,25 @@
 // Updated: 08-JAN-2012 for Arduno IDE 1.0 by <Hardcore@hardcoreforensics.com>
 //
 
+#include <pins_arduino.h>
 #include <SPI.h>
 #include <Ethernet.h>
 #include <Flash.h>
 #include <SD.h>
 #include <TinyWebServer.h>
+
+/****************VALUES YOU CHANGE*************/
+// pin 4 is the SPI select pin for the SDcard
+const int SD_CS = 4; 
+
+// pin 10 is the SPI select pin for the Ethernet
+const int ETHER_CS = 10;
+
+// Don't forget to modify the IP to an available one on your home network
+byte ip[] = { 192, 168, 5, 177 };
+/*********************************************/
+
+static uint8_t mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 
 boolean file_handler(TinyWebServer& web_server);
 boolean index_handler(TinyWebServer& web_server);
@@ -37,11 +51,6 @@ Sd2Card card;
 SdVolume volume;
 SdFile root;
 SdFile file;
-
-static uint8_t mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-
-// Don't forget to modify the IP to an available one on your home network
-byte ip[] = { 192, 168, 5, 177 };
 
 void send_file_name(TinyWebServer& web_server, const char* filename) {
   if (!filename) {
@@ -117,15 +126,25 @@ void setup() {
   Serial.begin(115200);
   Serial << F("Free RAM: ") << FreeRam() << "\n";
 
-  // initialize the SD card
+  pinMode(SS_PIN, OUTPUT);      // set the SS pin as an output (necessary to keep the board as master and not SPI slave)
+  digitalWrite(SS_PIN, HIGH);   // and ensure SS is high
+
+// Ensure we are in a consistent state after power-up or a reset button
+// These pins are standard for the Arduino w5100 Rev 3 ethernet board
+// They may need to be re-jigged for different boards
+  pinMode(ETHER_CS, OUTPUT); 		// Set the CS pin as an output
+  digitalWrite(ETHER_CS, HIGH); 	// Turn off the W5100 chip! (wait for configuration)
+  pinMode(SD_CS, OUTPUT);           // Set the SDcard CS pin as an output
+  digitalWrite(SD_CS, HIGH); 		// Turn off the SD card! (wait for configuration)
+
+  // initialize the SD card.
   Serial << F("Setting up SD card...\n");
-  pinMode(10, OUTPUT); // set the SS pin as an output (necessary!)
-  digitalWrite(10, HIGH); // but turn off the W5100 chip!
-  if (!card.init(SPI_FULL_SPEED, 4)) {
+  if (!card.init(SPI_FULL_SPEED, SD_CS)) //pass over the speed and Chip select for the SD card
+ {
     Serial << F("card failed\n");
     has_filesystem = false;
   }
-  // initialize a FAT volume
+  // initialize a FAT volume.
   if (!volume.init(&card)) {
     Serial << F("vol.init failed!\n");
     has_filesystem = false;
@@ -140,6 +159,7 @@ void setup() {
     TinyWebPutHandler::put_handler_fn = file_uploader_handler;
   }
 
+  // Initialize the Ethernet.
   Serial << F("Setting up the Ethernet card...\n");
   Ethernet.begin(mac, ip);
 
