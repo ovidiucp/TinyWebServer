@@ -587,7 +587,8 @@ boolean put_handler(TinyWebServer& web_server) {
 
   const char* length_str = web_server.get_header_value("Content-Length");
   long length = atol(length_str);
-  uint32_t start_time = millis();
+  uint32_t start_time = 0;
+  boolean watchdog_start = false;
 
   EthernetClient client = web_server.get_client();
 
@@ -599,14 +600,22 @@ boolean put_handler(TinyWebServer& web_server) {
   for (i = 0; i < length && client.connected();) {
     int16_t size = read_chars(web_server, client, (uint8_t*)buffer, 64);
     if (!size) {
-      // Exit if the upload takes more than 30 seconds.
-      if (millis() - start_time > 30000) {
-        Serial << F("Zero bytes sent time >30 Sec.");
-   break;
+      if (watchdog_start){
+        if (millis() - start_time > 30000) {
+          // Exit if there has been zero data from connected client for more than 30 seconds.
+          Serial << F("There has been no data for >30 Sec.\n");
+          break;
+        }
+      } else {
+        // We have hit an empty buffer, start the watchdog.
+        start_time = millis();
+        watchdog_start = true;
       }
-      continue;
+        continue;
     }
     i += size;
+    // Ensure we re-start the watchdog if we get ANY data input.
+    watchdog_start = false;
 
     if (put_handler_fn) {
       (*put_handler_fn)(web_server, WRITE, buffer, size);
