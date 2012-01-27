@@ -24,8 +24,8 @@ public:
       content_(content),
       pos_(0) {}
 
-  static char* get_field_public(const char* buffer, int size, int which) {
-    return get_field(buffer, size, which);
+  static char* get_field_public(const char* buffer, int which) {
+    return get_field(buffer, which);
   }
 
 protected:
@@ -145,22 +145,22 @@ void test_get_mime_type_from_filename() {
 void test_get_field() {
   {
     char b[] = "GET / HTTP/1.0";
-    expect_str_eq("GET", TinyWebServerTest::get_field_public(b, sizeof(b), 0));
-    expect_str_eq("/", TinyWebServerTest::get_field_public(b, sizeof(b), 1));
+    expect_str_eq("GET", TinyWebServerTest::get_field_public(b, 0));
+    expect_str_eq("/", TinyWebServerTest::get_field_public(b, 1));
     expect_str_eq("HTTP/1.0",
-                  TinyWebServerTest::get_field_public(b, sizeof(b), 2));
+                  TinyWebServerTest::get_field_public(b, 2));
   }
 
   {
     char b[] = "  GET  /  HTTP/1.0  ";
-    expect_str_eq("GET", TinyWebServerTest::get_field_public(b, sizeof(b), 0));
-    expect_str_eq("/", TinyWebServerTest::get_field_public(b, sizeof(b), 1));
-    expect_str_eq("HTTP/1.0", TinyWebServerTest::get_field_public(b, sizeof(b), 2));
+    expect_str_eq("GET", TinyWebServerTest::get_field_public(b, 0));
+    expect_str_eq("/", TinyWebServerTest::get_field_public(b, 1));
+    expect_str_eq("HTTP/1.0", TinyWebServerTest::get_field_public(b, 2));
   }
 
   {
     char b[] = "GET / HTTP/1.0";
-    expect_str_eq(NULL, TinyWebServerTest::get_field_public(b, sizeof(b), 3));
+    expect_str_eq(NULL, TinyWebServerTest::get_field_public(b, 3));
   }
 }
 
