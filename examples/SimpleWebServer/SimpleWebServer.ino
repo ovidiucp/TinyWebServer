@@ -53,16 +53,20 @@ void setup() {
   Serial.begin(115200);
   Serial << F("Free RAM: ") << FreeRam() << "\n";
 
-  pinMode(SS_PIN, OUTPUT);      // set the SS pin as an output (necessary to keep the board as master and not SPI slave)
-  digitalWrite(SS_PIN, HIGH);   // and ensure SS is high
+  pinMode(SS_PIN, OUTPUT);	// set the SS pin as an output
+                                // (necessary to keep the board as
+                                // master and not SPI slave)
+  digitalWrite(SS_PIN, HIGH);	// and ensure SS is high
 
-// Ensure we are in a consistent state after power-up or a reset button
-// These pins are standard for the Arduino w5100 Rev 3 ethernet board
-// They may need to be re-jigged for different boards
-  pinMode(ETHER_CS, OUTPUT); 		// Set the CS pin as an output
-  digitalWrite(ETHER_CS, HIGH); 	// Turn off the W5100 chip! (wait for configuration)
-  pinMode(SD_CS, OUTPUT);           // Set the SDcard CS pin as an output
-  digitalWrite(SD_CS, HIGH); 		// Turn off the SD card! (wait for configuration)
+  // Ensure we are in a consistent state after power-up or a reset
+  // button These pins are standard for the Arduino w5100 Rev 3
+  // ethernet board They may need to be re-jigged for different boards
+  pinMode(ETHER_CS, OUTPUT);	// Set the CS pin as an output
+  digitalWrite(ETHER_CS, HIGH);	// Turn off the W5100 chip! (wait for
+                                // configuration)
+  pinMode(SD_CS, OUTPUT);	// Set the SDcard CS pin as an output
+  digitalWrite(SD_CS, HIGH);	// Turn off the SD card! (wait for
+                                // configuration)
 
   // Initialize the Ethernet.
   Serial << F("Setting up the Ethernet card...\n");

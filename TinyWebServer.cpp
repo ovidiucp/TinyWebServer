@@ -66,15 +66,13 @@ TinyWebServer::TinyWebServer(PathHandler handlers[],
       size++;
     }
     headers_ = (HeaderValue*)malloc_check(sizeof(HeaderValue) * (size + 1));
-    if (headers_) { // headers_ = NULL if the malloc fails.
+    if (headers_) {
       for (int i = 0; i < size; i++) {
         headers_[i].header = headers[i];
         headers_[i].value = NULL;
       }
       headers_[size].header = NULL;
     }
-  } else {
-    headers_ = NULL;
   }
 }
 
@@ -89,7 +87,7 @@ boolean TinyWebServer::process_headers() {
     for (int i = 0; headers_[i].header; i++) {
       if (headers_[i].value) {
         free(headers_[i].value);
-        //Ensure the pointer is cleared once the memory is freed.
+        // Ensure the pointer is cleared once the memory is freed.
         headers_[i].value = NULL;
       }
     }
@@ -526,9 +524,8 @@ char* TinyWebServer::get_field(const char* buffer, int which) {
   int field_no = 0;
   int size = strlen(buffer);
 
-  // Locate the field we need.
-  // A field is defined as an area of non-space characters delimited by
-  // one or more space characters.
+  // Locate the field we need. A field is defined as an area of
+  // non-space characters delimited by one or more space characters.
   for (; field_no < which; field_no++) {
     // Skip over space characters
     while (i < size && isspace(buffer[i])) {
@@ -554,9 +551,9 @@ char* TinyWebServer::get_field(const char* buffer, int which) {
     }
 
     field = (char*) malloc_check(j - i + 1);
-      if (!field) {
-        return NULL;
-      }
+    if (!field) {
+      return NULL;
+    }
     memcpy(field, buffer + i, j - i);
     field[j - i] = 0;
   }
@@ -600,9 +597,10 @@ boolean put_handler(TinyWebServer& web_server) {
   for (i = 0; i < length && client.connected();) {
     int16_t size = read_chars(web_server, client, (uint8_t*)buffer, 64);
     if (!size) {
-      if (watchdog_start){
+      if (watchdog_start) {
         if (millis() - start_time > 30000) {
-          // Exit if there has been zero data from connected client for more than 30 seconds.
+          // Exit if there has been zero data from connected client
+          // for more than 30 seconds.
           Serial << F("There has been no data for >30 Sec.\n");
           break;
         }
@@ -611,7 +609,7 @@ boolean put_handler(TinyWebServer& web_server) {
         start_time = millis();
         watchdog_start = true;
       }
-        continue;
+      continue;
     }
     i += size;
     // Ensure we re-start the watchdog if we get ANY data input.
