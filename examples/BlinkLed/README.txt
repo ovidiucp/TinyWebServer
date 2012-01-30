@@ -1,11 +1,14 @@
 To get this example running, make sure you modify the IP address
-inside the BlinkLed.pde and upload.sh files to match an unused IP
+inside the BlinkLed.ino and upload.sh files to match an unused IP
 address in your network.
 
-Connect an LED with a resistor to pin 7 of your Arduino (the +
-terminal of the LED should be on Pin 7). Connect LED's GND to a ground
-pin on your Arduino. See the video below for how it works:
+Connect an LED with a series resistor between pin 7 and Gnd of
+your Arduino.
+Connect LED's GND to a Gnd pin on your Arduino, the other terminal
+ of the LED via the resistor should be on Pin 7. 
 
+
+See the video below for how it works:
 http://www.youtube.com/watch?v=qZXKk6nCYuM
 
 Then run the upload.sh script to upload the files in the static

@@ -1,5 +1,5 @@
 To get this example running, make sure you modify the IP address
-inside the FileUpload.pde and upload.sh files to match an unused IP
+inside the FileUpload.ino and upload.sh files to match an unused IP
 address in your network.
 
 Then run the upload.sh script to upload the files in the static
