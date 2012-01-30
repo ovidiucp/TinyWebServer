@@ -7,6 +7,14 @@
 //
 // TinyWebServer for Arduino.
 
+// The _DEBUG flag will enable serial console logging in this library
+// By default it is OFF, to ensure that any scripts using the Serial port
+// are not corrupted by this libraries debugging messages.
+// To Enable debugging set the following: _DEBUG 1 and 
+// ENSURE that you have configured the serial port in the main Arduino script.
+// Overall size increase in the code for debugging is about 330 bytes.
+
+#define _DEBUG 0
 
 #include "Arduino.h"
 
@@ -44,9 +52,11 @@ FLASH_STRING(mime_types,
 
 void *malloc_check(size_t size) {
   void* r = malloc(size);
+#if _DEBUG
   if (!r) {
     Serial << F("No space for malloc: " ); Serial.println(size, DEC);
   }
+#endif
   return r;
 }
 
@@ -114,8 +124,9 @@ boolean TinyWebServer::process_headers() {
     if (!read_next_char(client_, (uint8_t*)&ch)) {
       continue;
     }
-
+#if _DEBUG
     Serial.print(ch);
+#endif
     switch (state) {
     case START_LINE:
       if (ch == '\r') {
@@ -213,8 +224,10 @@ void TinyWebServer::process() {
   if (!buffer[0]) {
     return;
   }
+#if _DEBUG
   Serial << F("New request: ");
   Serial.println(buffer);
+#endif
   if (!is_complete) {
     // The requested path is too long.
     send_error_code(414);
@@ -309,9 +322,10 @@ boolean TinyWebServer::assign_header_value(const char* header, char* value) {
 FLASH_STRING(content_type_msg, "Content-Type: ");
 
 void TinyWebServer::send_error_code(Client& client, int code) {
+#if _DEBUG
   Serial << F("Returning ");
   Serial.println(code, DEC);
-
+#endif
   client << F("HTTP/1.1 ");
   client.print(code, DEC);
   client << F(" OK\r\n");
@@ -601,7 +615,9 @@ boolean put_handler(TinyWebServer& web_server) {
         if (millis() - start_time > 30000) {
           // Exit if there has been zero data from connected client
           // for more than 30 seconds.
+#if _DEBUG
           Serial << F("There has been no data for >30 Sec.\n");
+#endif
           break;
         }
       } else {
