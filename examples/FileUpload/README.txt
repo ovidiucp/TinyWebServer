@@ -14,5 +14,12 @@ upload.
 
 curl -0 -T $file http://$ARDUINO/upload/
 
+*Note that since the handler in the 'FileUpload.ino' looks like this:
+
+{"/upload/" "*", TinyWebServer::PUT, &TinyWebPutHandler::put_handler }
+
+you must ensure that the path '/upload/' is in your submitted URL
+
+
 If you're a Windows developer, I'd appreciate if you could write a
 small batch file that does the equivalent of update.sh.
