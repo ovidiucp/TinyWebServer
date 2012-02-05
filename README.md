@@ -254,6 +254,13 @@ put_handler_fn, like this:
 
 You can now test uploading a file using curl:
 
+*Note that since the handler in the source looks like this:
+
+{"/upload/" "*", TinyWebServer::PUT, &TinyWebPutHandler::put_handler }
+
+you must ensure that the path '/upload/' is in your submitted URL
+
+
     curl -0 -T index.htm http://my-arduino-ip-address/upload
 
 For a complete working example of the file upload and serving web

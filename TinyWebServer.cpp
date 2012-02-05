@@ -6,7 +6,20 @@
 // Updated: 08-JAN-2012 for Arduno IDE 1.0 by <Hardcore@hardcoreforensics.com>
 //
 // TinyWebServer for Arduino.
+//
+// The DEBUG flag will enable serial console logging in this library
+// By default Debugging to the Serial console is OFF.
+// This ensures that any scripts using the Serial port are not corrupted
+// by the tinywebserver libraries debugging messages.
+//
+// To ENABLE debugging set the following:
+// DEBUG 1 and ENSURE that you have configured the serial port in the
+// main Arduino script.
+//
+// There is an overall size increase of about 340 bytes in code size
+// when the debugging is enabled and debugging lines are preceded by 'TWS:'
 
+#define DEBUG 0
 
 #include "Arduino.h"
 
@@ -44,9 +57,11 @@ FLASH_STRING(mime_types,
 
 void *malloc_check(size_t size) {
   void* r = malloc(size);
+#if DEBUG
   if (!r) {
-    Serial << F("No space for malloc: " ); Serial.println(size, DEC);
+    Serial << F("TWS:No space for malloc: " ); Serial.println(size, DEC);
   }
+#endif
   return r;
 }
 
@@ -114,8 +129,9 @@ boolean TinyWebServer::process_headers() {
     if (!read_next_char(client_, (uint8_t*)&ch)) {
       continue;
     }
-
+#if DEBUG
     Serial.print(ch);
+#endif
     switch (state) {
     case START_LINE:
       if (ch == '\r') {
@@ -213,8 +229,10 @@ void TinyWebServer::process() {
   if (!buffer[0]) {
     return;
   }
-  Serial << F("New request: ");
+#if DEBUG
+  Serial << F("TWS:New request: ");
   Serial.println(buffer);
+#endif
   if (!is_complete) {
     // The requested path is too long.
     send_error_code(414);
@@ -309,9 +327,10 @@ boolean TinyWebServer::assign_header_value(const char* header, char* value) {
 FLASH_STRING(content_type_msg, "Content-Type: ");
 
 void TinyWebServer::send_error_code(Client& client, int code) {
-  Serial << F("Returning ");
+#if DEBUG
+  Serial << F("TWS:Returning ");
   Serial.println(code, DEC);
-
+#endif
   client << F("HTTP/1.1 ");
   client.print(code, DEC);
   client << F(" OK\r\n");
@@ -601,7 +620,9 @@ boolean put_handler(TinyWebServer& web_server) {
         if (millis() - start_time > 30000) {
           // Exit if there has been zero data from connected client
           // for more than 30 seconds.
-          Serial << F("There has been no data for >30 Sec.\n");
+#if DEBUG
+          Serial << F("TWS:There has been no data for >30 Sec.\n");
+#endif
           break;
         }
       } else {
