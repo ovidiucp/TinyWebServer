@@ -48,7 +48,7 @@ function ledStatus(btn, url) {
 	    success: function(status) {
 		status = parseInt(status.trim());
 		btn.setEnabled(status);
-		window.setTimeout(ledStatus, 400, btn, url);
+		window.setTimeout(function() {ledStatus(btn, url);}, 400);
 	    },
 	    error: function(s, xhr, status, e) {
 		console.log("Getting status failed: "
