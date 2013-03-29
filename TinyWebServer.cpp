@@ -4,7 +4,7 @@
 // Date: May 2010
 //
 // Updated: 08-JAN-2012 for Arduno IDE 1.0 by <Hardcore@hardcoreforensics.com>
-// Updated: 23-MAR-2013 replacing strtoul with hextodec by <shin@marcsi.ch>	
+// Updated: 29-MAR-2013 replacing strtoul with parseHexChar by <shin@marcsi.ch>	
 //
 // TinyWebServer for Arduino.
 //
@@ -375,7 +375,7 @@ const char* TinyWebServer::get_header_value(const char* name) {
   return NULL;
 }
 
-int hextodec(char ch) {
+int parseHexChar(char ch) {
 	if (isdigit(ch)) return ch - '0';
 	ch = tolower(ch);
 	if ( ch >= 'a' &&  ch <= 'e') return ch - 'a' + 10;
@@ -404,7 +404,7 @@ char* TinyWebServer::decode_url_encoded(const char* s) {
       s = p;
       break;
     }
-    uint8_t r =  hextodec(*(p + 1)) << 4 | hextodec(*(p + 2));
+    uint8_t r =  parseHexChar(*(p + 1)) << 4 | parseHexChar(*(p + 2));
     *r2++ = r;
     p += 3;
 
