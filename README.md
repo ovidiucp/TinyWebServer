@@ -15,24 +15,10 @@ long as you're sending back the changes you make to the library.
 External dependencies
 ====================
 
-TinyWebServer depends on the external library Flash version 3.0, which
+TinyWebServer depends on the external library Flash version 4.0, which
 is found here:
 
 http://arduiniana.org/libraries/flash/
-
-At the time of this writing (January 10, 2012), Flash 3.0 needs a
-small change to make it compatible with Arduino 1.0. In Flash/Flash.h
-replace the line
-
-    #include <WProgram.h>
-
-with:
-
-    #if ARDUINO < 100
-    # include <WProgram.h>
-    #else
-    # include <Arduino.h>
-    #endif
 
 Basic web server
 ================
