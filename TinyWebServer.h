@@ -68,7 +68,8 @@ public:
   // interested in.
   //
   // NOTE: Make sure the header names are all lowercase.
-  TinyWebServer(PathHandler handlers[], const char** headers);
+  TinyWebServer(PathHandler handlers[], const char** headers,
+                const int port=80);
 
   // Call this method to start the HTTP server
   void begin();

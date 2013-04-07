@@ -69,9 +69,10 @@ void *malloc_check(size_t size) {
 static const TinyWebServer::MimeType text_html_content_type = 4;
 
 TinyWebServer::TinyWebServer(PathHandler handlers[],
-			     const char** headers)
+			     const char** headers,
+                             const int port)
   : handlers_(handlers),
-    server_(EthernetServer(80)),
+    server_(EthernetServer(port)),
     path_(NULL),
     request_type_(UNKNOWN_REQUEST),
     client_(EthernetClient(255)) {
