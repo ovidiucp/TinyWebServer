@@ -2,7 +2,11 @@ Arduino TinyWebServer
 
 A small web server for Arduino.
 
-Please read up on the TinyWebServer history here:
+Check out this video demonstrating what you can do with it:
+
+http://www.youtube.com/watch?v=qZXKk6nCYuM
+
+You can read up on TinyWebServer's history here:
 
 http://www.webweavertech.com/ovidiu/weblog/archives/000484.html
 
