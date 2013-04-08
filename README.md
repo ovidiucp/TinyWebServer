@@ -24,6 +24,11 @@ is found here:
 
 http://arduiniana.org/libraries/flash/
 
+Make sure you dowload the Flash library and install it in your
+Arduino's `libraries` directory, as described in this document:
+
+http://arduino.cc/en/Guide/Libraries
+
 Basic web server
 ================
 
