@@ -47,16 +47,19 @@ void send_file_name(TinyWebServer& web_server, const char* filename) {
   } else {
     TinyWebServer::MimeType mime_type
       = TinyWebServer::get_mime_type_from_filename(filename);
-    web_server.send_error_code(200);
     if (file.open(&root, filename, O_READ)) {
-	  web_server.send_content_type(mime_type);
-	  web_server.end_headers();
+      web_server.send_error_code(200);
+      web_server.send_content_type(mime_type);
+      web_server.end_headers();
+      
       Serial << F("Read file "); Serial.println(filename);
       web_server.send_file(file);
       file.close();
     } else {
-	  web_server.send_content_type("text/plain");
-	  web_server.end_headers();
+      web_server.send_error_code(404);
+      web_server.send_content_type("text/plain");
+      web_server.end_headers();
+	  
 	  Serial << F("Could not find file: "); Serial.println(filename);
       web_server << F("Could not find file: ") << filename << "\n";
     }
