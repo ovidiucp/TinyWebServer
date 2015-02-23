@@ -250,7 +250,10 @@ void TinyWebServer::process() {
     request_type_ = POST;
   } else if (!strcmp("PUT", request_type_str)) {
     request_type_ = PUT;
+  } else if (!strcmp("DELETE", request_type_str)) {
+    request_type_ = DELETE;
   }
+  
   path_ = get_field(buffer, 1);
 
   // Process the headers.
