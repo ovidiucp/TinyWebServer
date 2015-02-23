@@ -34,35 +34,45 @@ TinyWebServer::PathHandler handlers[] = {
 };
 
 boolean file_handler(TinyWebServer& web_server) {
+	  
+  if(!has_filesystem) {
+    web_server.send_error_code(500);
+    web_server << P("Internal Server Error");
+    return true;
+  }
+  
   char* filename = TinyWebServer::get_file_from_path(web_server.get_path());
+  
+  if(!filename) {
+  	web_server.send_error_code(400);
+  	web_server << F("Bad Request");
+  	return true;
+  }
+  
   send_file_name(web_server, filename);
   free(filename);
   return true;
 }
 
 void send_file_name(TinyWebServer& web_server, const char* filename) {
-  if (!filename) {
-    web_server.send_error_code(404);
-    web_server << F("Could not parse URL");
+
+  TinyWebServer::MimeType mime_type
+    = TinyWebServer::get_mime_type_from_filename(filename);
+  if (file.open(&root, filename, O_READ)) {
+    web_server.send_error_code(200);
+    web_server.send_content_type(mime_type);
+    web_server.end_headers();
+    
+    Serial << F("Read file "); Serial.println(filename);
+    web_server.send_file(file);
+    file.close();
   } else {
-    TinyWebServer::MimeType mime_type
-      = TinyWebServer::get_mime_type_from_filename(filename);
-    if (file.open(&root, filename, O_READ)) {
-      web_server.send_error_code(200);
-      web_server.send_content_type(mime_type);
-      web_server.end_headers();
-      
-      Serial << F("Read file "); Serial.println(filename);
-      web_server.send_file(file);
-      file.close();
-    } else {
-      web_server.send_error_code(404);
-      web_server.send_content_type("text/plain");
-      web_server.end_headers();
-	  
-	  Serial << F("Could not find file: "); Serial.println(filename);
-      web_server << F("Could not find file: ") << filename << "\n";
-    }
+    web_server.send_error_code(404);
+    web_server.send_content_type("text/plain");
+    web_server.end_headers();
+  
+    Serial << F("Could not find file: "); Serial.println(filename);
+    web_server << F("404 - File not found") << filename << "\n";
   }
 }
 
