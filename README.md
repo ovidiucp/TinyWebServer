@@ -1,3 +1,4 @@
+Date: 2015-03-06 14:58:18
 Arduino TinyWebServer
 
 A small web server for Arduino.
@@ -19,7 +20,7 @@ long as you're sending back the changes you make to the library.
 External dependencies
 ====================
 
-TinyWebServer depends on the external library Flash version 4.0, which
+TinyWebServer depends on the external library Flash version 5.0, which
 is found here:
 
 http://arduiniana.org/libraries/flash/
@@ -28,6 +29,16 @@ Make sure you dowload the Flash library and install it in your
 Arduino's `libraries` directory, as described in this document:
 
 http://arduino.cc/en/Guide/Libraries
+
+If you're using a version of Arduino IDE newer than 1.5, you need to
+modify the `Flash.h` file to include the following lines just after
+the `#include <avr/pgmspace.h>` line:
+
+```
+#if ARDUINO >= 150
+typedef char prog_char __attribute__((__progmem__));
+#endif
+```
 
 Basic web server
 ================
@@ -291,4 +302,3 @@ end of the IR learning procedure. Since the Ethernet shield only
 allows for 4 maximum HTTP clients open at the same time (because of 4
 maximum client sockets), in my application I allow only one /learn
 handler to be active at any given time.
-
