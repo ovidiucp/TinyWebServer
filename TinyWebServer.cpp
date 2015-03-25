@@ -22,6 +22,9 @@
 
 #define DEBUG 0
 
+// 10 milliseconds read timeout
+#define READ_TIMEOUT 10
+
 #include "Arduino.h"
 
 extern "C" {
@@ -124,13 +127,18 @@ boolean TinyWebServer::process_headers() {
   char ch;
   int pos;
   const char* header;
+  uint32_t start_time = millis();
   while (1) {
     if (should_stop_processing()) {
+      return false;
+    }
+    if (millis() - start_time > READ_TIMEOUT) {
       return false;
     }
     if (!read_next_char(client_, (uint8_t*)&ch)) {
       continue;
     }
+    start_time = millis();
 #if DEBUG
     Serial.print(ch);
 #endif
