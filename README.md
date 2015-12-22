@@ -40,6 +40,16 @@ typedef char prog_char __attribute__((__progmem__));
 #endif
 ```
 
+If you're using an ARM Cortex M0-based board, such as the Arduino Zero
+or the MKR1000, you need to modify the `Flash.h` file to include the
+following:
+
+```
+#if ARDUINO_ARCH_SAMD
+extern char* strncpy_P(char* dest, const char* src, int size);
+#endif
+```
+
 Basic web server
 ================
 
